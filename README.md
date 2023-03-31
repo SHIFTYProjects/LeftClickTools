@@ -2,6 +2,8 @@
 
 **Powershell GUI that allows troubleshooting and Remote actions on Pc's.**
 
+Just add a computer one at a time, or a list of computers.  1 Per Line.  In a text document to perform actions on remote computers.  All information is displayed in an output box, as well as outputting to a more verbose log on the users desktop.  It uses whoever is running the powershell applications credentials to manipulate machines, so it is in no way an incognito or "Hacking" tool.  All actions are also logged on the remote machine in the event viewer of that machine with whoever opened the tool listed as the owner of that action.  
+
 
 I used Base64 to encode the images in this powershell gui to make sure it had no dependencies.
 
