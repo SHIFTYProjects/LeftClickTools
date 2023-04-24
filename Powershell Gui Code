@@ -2,7 +2,7 @@
 # Name: Left Click Tools
 # Description: Powershell Left Click Tools 
 # Author: Josh Hochstettler 
-# v6 - 3.31.2023
+# 
 #
 
 
@@ -31,7 +31,7 @@ $wshell = New-Object -comObject Wscript.Shell
 #######       FORM SIZE       #######
 
 $Form = New-Object system.Windows.Forms.Form
-$Form.ClientSize = '925,500' #Width,Height
+$Form.ClientSize = '1270,600' #Width,Height
 $form.BackColor = ''
 $Form.text = "LEFT CLICK TOOLS"
 $Form.FormBorderStyle = 'Fixed3D'
@@ -43,7 +43,7 @@ $Form.TopMost = $false
 $outputBox = New-Object System.Windows.Forms.TextBox
 $outputBox.Multiline = $true
 $outputBox.ScrollBars = "Vertical"
-$outputBox.Location = New-Object System.Drawing.Point(555, 10)
+$outputBox.Location = New-Object System.Drawing.Point(580, 10)
 $outputBox.Size = New-Object System.Drawing.Size(350, 440)
 $form.Controls.Add($outputBox)
 
@@ -435,7 +435,7 @@ function PRINTCLR {
 
 
                         
-            ii -path \\$item.<YourDomain>\c$\Windows\System32\spool\PRINTERS
+            ii -path \\$item.YourDomain.net\c$\Windows\System32\spool\PRINTERS
                           
                          
             #INSERT SCRIPT TO PERFORM HERE
@@ -503,7 +503,7 @@ function PUBLICDSK {
 
 
                         
-            ii -path \\$item.<YourDomain>\c$\Users\Public\Desktop 
+            ii -path \\$item.YourDomain.net\c$\Users\Public\Desktop 
                           
                          
             #INSERT SCRIPT TO PERFORM HERE
@@ -576,7 +576,7 @@ function RemoteC {
 
 
                         
-            ii -path \\$item.<YourDomain>\c$ 
+            ii -path \\$item.YourDomain.net\c$ 
                           
                          
             #INSERT SCRIPT TO PERFORM HERE
@@ -630,7 +630,7 @@ function RemoteU {
 
 
                         
-  ii -path \\<SharedDrive>.<YourDomain>\Share\
+  ii -path \\asn.SharedDrive.net
                        
                        
                           
@@ -1567,13 +1567,80 @@ function KMS {
   }
 }
 
+#################################################################################################################################################
 
+
+function MACINFO {
+  logAction "Starting Mac Info Tool."
+  $outputBox.AppendText("Looking Up MAC Address Vendor Information..." + [Environment]::NewLine)
     
+  #INSERT SCRIPT TO PERFORM HERE
+
+
+  Add-Type -AssemblyName System.Windows.Forms
+
+  $form = New-Object System.Windows.Forms.Form
+  $form.Text = 'MAC'
+  $form.Width = 350
+  $form.Height = 200
+  $form.StartPosition = 'CenterScreen'
+
+  $label = New-Object System.Windows.Forms.Label
+  $label.Location = New-Object System.Drawing.Point(10, 20)
+  $label.Size = New-Object System.Drawing.Size(280, 20)
+  $label.Text = 'Please enter a MAC address:'
+  $form.Controls.Add($label)
+
+  $textbox = New-Object System.Windows.Forms.TextBox
+  $textbox.Location = New-Object System.Drawing.Point(10, 40)
+  $textbox.Size = New-Object System.Drawing.Size(260, 20)
+  $form.Controls.Add($textbox)
+
+  $button = New-Object System.Windows.Forms.Button
+  $button.Location = New-Object System.Drawing.Point(180, 80)
+  $button.Size = New-Object System.Drawing.Size(90, 30)
+  $button.Text = 'OK'
+  $button.DialogResult = [System.Windows.Forms.DialogResult]::OK
+  $form.AcceptButton = $button
+  $form.Controls.Add($button)
+
+  $form.Topmost = $true
+
+  $dialogResult = $form.ShowDialog()
+
+  if ($dialogResult -eq [System.Windows.Forms.DialogResult]::OK)
+  {
+    $macAddress = $textbox.Text
+
+    Add-Type -AssemblyName System.Net.Http
+    $httpClient = New-Object System.Net.Http.HttpClient
+
+    $url = "https://api.macvendors.com/$macAddress"
+
+    try {
+      $response = $httpClient.GetAsync($url).GetAwaiter().GetResult()
+      $result = $response.Content.ReadAsStringAsync().GetAwaiter().GetResult()
+
+      $outputBox.AppendText("MAC address information for $macAddress" + [Environment]::NewLine)
+      outputBox.AppendText("$result" + [Environment]::NewLine)
+      logAction "$result."
+        
+    }
+    catch {
+        
+      $outputBox.AppendText("" + [Environment]::NewLine)
+          
+    }
+  }
+
+  
+  $outputBox.AppendText("$result" + [Environment]::NewLine)
+}
 
 
 
 
-#################################################################################
+####################################################################################################################################################
 
 function VULN {
   logAction "GATHERING VULNERABILITY INFO."
@@ -1841,11 +1908,283 @@ Serial Number Automatically copies to your clipboard.
 
 }
 
+#################################################################################################################################################################
 
+
+function LASTLogin {
+  logAction "GATHERING last login INFO."
+  $outputBox.AppendText("GATHERING last login INFO from AD.  Please Wait....." + [Environment]::NewLine)
+  $outputBox.AppendText("Since this pulls from AD and not our Identity Service Engine this might display incorrect results." + [Environment]::NewLine)
+  
+
+  #INSERT SCRIPT TO PERFORM HERE
+
+  Add-Type -AssemblyName System.Windows.Forms
+  Add-Type -AssemblyName System.Drawing
+
+  # Display input box to enter user name
+  $user = [Microsoft.VisualBasic.Interaction]::InputBox("Please enter the users number")
+
+  # Retrieve AD user information
+  $ADUser = Get-ADUser -Identity $user -Properties LastLogon
+
+  # Format and display output
+  $Name = $ADUser.Name
+  $LastLogon = [DateTime]::FromFileTime($ADUser.LastLogon)
+                                        
+
+
+  #INSERT SCRIPT TO PERFORM HERE
+  $outputBox.AppendText("Name: $Name" + [Environment]::NewLine)
+  $outputBox.AppendText("Last Logon: $LastLogon" + [Environment]::NewLine)
+  logAction "Name: $Name Last Logon: $LastLogon."
+}
+
+########################################################################################################################
     
-
-
     
+function LOCALAdmin {
+  logAction "Starting Local Admin Tool."
+  $outputBox.AppendText("Local Admin Tool Started." + [Environment]::NewLine)
+  $msgBoxInput = $wshell.Popup("Do you want to Run a Local Admin Check on PC(s)? `n `n This ignores Default Admin Groups and only reports the users.", 0, "Confirm", 0x1)
+  switch ($msgBoxInput) {
+    '1' { 
+      logAction "User confirmed process execution."
+              
+      # Counters for progress bar calculation 
+      $ctr = 0 
+      foreach ($item in $itemList.items) {$ctr++}
+      $x = 100 / $ctr 
+      $y = 0 
+
+      # Loop to perform action on each item in the list.    
+      foreach ($item in $itemList.items) {
+        try {
+          If (test-connection -count 1 -ComputerName $item -quiet) {
+            logAction "$item ONLINE"
+            $outputBox.AppendText("$item ONLINE" + [Environment]::NewLine)
+
+            #INSERT SCRIPT TO PERFORM HERE
+
+
+
+            $Computer = $item
+            $admins = [ADSI]"WinNT://$Computer/administrators,group"
+            $adminlist = @($admins.psbase.Invoke("Members"))
+            $adminnames = @()
+
+            foreach ($admin in $adminlist) {
+              $adminname = $admin.GetType().InvokeMember("Name", 'GetProperty', $null, $admin, $null)
+
+################## In this section, put the local admin accounts you would like to ignore.
+
+              if ($adminname -notlike "*IGNOREDADMIN*" -and $adminname -notlike "*IGNOREDADMIN*" -and $adminname -notlike "*IGNOREDADMIN*" -and $adminname -notlike "*IGNOREDADMIN*" -and $adminname -notlike "*IGNOREDADMIN*" -and $adminname -notlike "*IGNOREDADMIN*") { 
+#############################################
+                $adminnames += $adminname
+              }
+            }
+
+            $output = "`r`n The following users are local administrators on: `r`n $Computer `r`n"
+            foreach ($admin in $adminnames) {
+              $output += "$admin FLAGGED - CHECK USER`r`n"
+            }
+
+            $outputBox.AppendText("$output" + [Environment]::NewLine)
+            logAction "$output"
+
+                  
+                          
+                       
+            #INSERT SCRIPT TO PERFORM HERE
+
+                        
+                        
+          }
+          Else {logAction "$item OFFLINE, Unable to make connection"
+            $statusText.text = "Item Offline"
+            $outputBox.AppendText("$item offline" + [Environment]::NewLine)
+          }
+
+        }
+        catch {
+          logAction "$item | $_.Exception.Message"
+          $outputBox.AppendText("$item | $_.Exception.Message" + [Environment]::NewLine)
+        }
+        $ProgressBar.Value = $y + $x
+        $y = $y + $x
+      }
+   
+      # Operation Completed finishing actions.
+            
+      logAction "Local Admin Check Attempt Completed."
+      $outputBox.AppendText("Local Admin Check Attempt Completed." + [Environment]::NewLine)
+      Start-Sleep -Seconds 1
+      $statusText.text = ""
+      $ProgressBar.Value = 0
+
+    }
+    '2' {
+      logAction "User aborted the operation. (Confirmation declined.)"
+      $outputBox.AppendText("User aborted the operation. (Confirmation declined.)" + [Environment]::NewLine)
+    }
+  }
+}
+
+
+############################################################################################################
+
+function ALLLOCALAdmin {
+  logAction "Starting Local Admin Tool."
+  $outputBox.AppendText("Local Admin Tool Started." + [Environment]::NewLine)
+  $msgBoxInput = $wshell.Popup("Do you want to Run a Local Admin Check on PC(s)?", 0, "Confirm", 0x1)
+  switch ($msgBoxInput) {
+    '1' { 
+      logAction "User confirmed process execution."
+              
+      # Counters for progress bar calculation 
+      $ctr = 0 
+      foreach ($item in $itemList.items) {$ctr++}
+      $x = 100 / $ctr 
+      $y = 0 
+
+      # Loop to perform action on each item in the list.    
+      foreach ($item in $itemList.items) {
+        try {
+          If (test-connection -count 1 -ComputerName $item -quiet) {
+            logAction "$item ONLINE"
+            $outputBox.AppendText("$item ONLINE" + [Environment]::NewLine)
+
+            #INSERT SCRIPT TO PERFORM HERE
+
+
+
+            $Computer = $item
+            $admins = [ADSI]"WinNT://$Computer/administrators,group"
+            $adminlist = @($admins.psbase.Invoke("Members"))
+            $adminnames = @()
+
+            foreach ($admin in $adminlist) {
+              $adminname = $admin.GetType().InvokeMember("Name", 'GetProperty', $null, $admin, $null)
+              if ($adminname -notlike "*EXCLUSIONS GO HERE*" -and $adminname -notlike "*EXCLUSIONS GO HERE*" -and $adminname -notlike "*EXCLUSIONS GO HERE*" -and $adminname -notlike "*EXCLUSIONS GO HERE*" -and $adminname -notlike "*EXCLUSIONS GO HERE*" -and $adminname -notlike "*EXCLUSIONS GO HERE*") { # Check if admin name does not contain "Cheese" or "fruit"
+                $adminnames += $adminname
+              }
+            }
+
+            $output = "`r`n The following users are local administrators on: `r`n $Computer `r`n"
+            foreach ($admin in $adminnames) {
+              $output += "$admin`r`n"
+            }
+
+            $outputBox.AppendText("$output" + [Environment]::NewLine)
+            logAction "$output"
+
+                  
+                          
+                       
+            #INSERT SCRIPT TO PERFORM HERE
+
+                        
+                        
+          }
+          Else {logAction "$item OFFLINE, Unable to make connection"
+            $statusText.text = "Item Offline"
+            $outputBox.AppendText("$item offline" + [Environment]::NewLine)
+          }
+
+        }
+        catch {
+          logAction "$item | $_.Exception.Message"
+          $outputBox.AppendText("$item | $_.Exception.Message" + [Environment]::NewLine)
+        }
+        $ProgressBar.Value = $y + $x
+        $y = $y + $x
+      }
+   
+      # Operation Completed finishing actions.
+            
+      logAction "Local Admin Check Attempt Completed."
+      $outputBox.AppendText("Local Admin Check Attempt Completed." + [Environment]::NewLine)
+      Start-Sleep -Seconds 1
+      $statusText.text = ""
+      $ProgressBar.Value = 0
+
+    }
+    '2' {
+      logAction "User aborted the operation. (Confirmation declined.)"
+      $outputBox.AppendText("User aborted the operation. (Confirmation declined.)" + [Environment]::NewLine)
+    }
+  }
+}
+
+#############################################################################################################
+
+
+
+function TINYURL {
+  Add-Type -AssemblyName System.Windows.Forms
+
+  $form = New-Object System.Windows.Forms.Form
+  $form.Text = 'Enter Shortened URL'
+  $form.Width = 400
+  $form.Height = 200
+  $form.StartPosition = 'CenterScreen'
+
+  $label = New-Object System.Windows.Forms.Label
+  $label.Location = New-Object System.Drawing.Point(10, 20)
+  $label.Size = New-Object System.Drawing.Size(280, 20)
+  $label.Text = 'Enter a shortened URL:'
+  $form.Controls.Add($label)
+
+  $textbox = New-Object System.Windows.Forms.TextBox
+  $textbox.Location = New-Object System.Drawing.Point(10, 40)
+  $textbox.Size = New-Object System.Drawing.Size(360, 20)
+  $form.Controls.Add($textbox)
+
+  $button = New-Object System.Windows.Forms.Button
+  $button.Location = New-Object System.Drawing.Point(280, 80)
+  $button.Size = New-Object System.Drawing.Size(90, 30)
+  $button.Text = 'OK'
+  $button.DialogResult = [System.Windows.Forms.DialogResult]::OK
+  $form.AcceptButton = $button
+  $form.Controls.Add($button)
+
+  $form.Topmost = $true
+
+  $dialogResult = $form.ShowDialog()
+
+  if ($dialogResult -eq [System.Windows.Forms.DialogResult]::OK) {
+    $url = $textbox.Text
+
+    try {
+      $response = Invoke-WebRequest -MaximumRedirection 0 -Uri $url
+      $location = $response.Headers.Location
+      $statusCode = $response.StatusCode
+      $vendor = $response.Headers.'X-Powered-By'
+
+      $outputBox.AppendText("Result for $url" + [Environment]::NewLine)
+      $outputBox.AppendText("Location: $location" + [Environment]::NewLine)
+      $outputBox.AppendText("Status code: $statusCode" + [Environment]::NewLine)
+      $outputBox.AppendText("Vendor: $vendor" + [Environment]::NewLine)
+    }
+    catch {
+      $outputBox.AppendText("Error fetching $url." + [Environment]::NewLine)
+    }
+  }
+}
+
+
+
+
+
+
+
+
+
+
+#############################################################################################################
+
+#############################################################################################################
+
 
 
 
@@ -2125,6 +2464,29 @@ $KMS.Font = 'Microsoft Sans Serif,10'
 $KMS.Add_Click( { KMS })
 $Form.Controls.Add($KMS)
 
+
+$MACINFO = New-Object system.Windows.Forms.Button
+$MACINFO.Text = "MAC Vendor"  
+$MACINFO.ForeColor = "black"   
+$MACINFO.BackColor = "lightblue"
+$MACINFO.width = 110
+$MACINFO.height = 24
+$MACINFO.location = New-Object System.Drawing.Point(10, 490) #horizontal, vertical
+$MACINFO.Font = 'Microsoft Sans Serif,10'
+$MACINFO.Add_Click( { MACINFO })
+$Form.Controls.Add($MACINFO)
+
+$TINYURL = New-Object system.Windows.Forms.Button
+$TINYURL.Text = "URL Checker"  
+$TINYURL.ForeColor = "black"   
+$TINYURL.BackColor = "lightblue"
+$TINYURL.width = 110
+$TINYURL.height = 24
+$TINYURL.location = New-Object System.Drawing.Point(10, 520) #horizontal, vertical
+$TINYURL.Font = 'Microsoft Sans Serif,10'
+$TINYURL.Add_Click( { TINYURL })
+$Form.Controls.Add($TINYURL)
+
 $GPOStatus = New-Object system.Windows.Forms.Button
 $GPOStatus.Text = "GPO Status"  
 $GPOStatus.ForeColor = "white"   
@@ -2135,6 +2497,39 @@ $GPOStatus.location = New-Object System.Drawing.Point(125, 430) #horizontal, ver
 $GPOStatus.Font = 'Microsoft Sans Serif,10'
 $GPOStatus.Add_Click( { GPOStatus })
 $Form.Controls.Add($GPOStatus)
+
+$LASTLogin = New-Object system.Windows.Forms.Button
+$LASTLogin.Text = "Last User Login"  
+$LASTLogin.ForeColor = "white"   
+$LASTLogin.BackColor = "black"
+$LASTLogin.width = 110
+$LASTLogin.height = 24
+$LASTLogin.location = New-Object System.Drawing.Point(240, 430) #horizontal, vertical
+$LASTLogin.Font = 'Microsoft Sans Serif,10'
+$LASTLogin.Add_Click( { LASTLogin })
+$Form.Controls.Add($LASTLogin)
+
+$LOCALAdmin = New-Object system.Windows.Forms.Button
+$LOCALAdmin.Text = "Local Admin"  
+$LOCALAdmin.ForeColor = "white"   
+$LOCALAdmin.BackColor = "black"
+$LOCALAdmin.width = 90
+$LOCALAdmin.height = 24
+$LOCALAdmin.location = New-Object System.Drawing.Point(355, 430) #horizontal, vertical
+$LOCALAdmin.Font = 'Microsoft Sans Serif,10'
+$LOCALAdmin.Add_Click( { LOCALAdmin })
+$Form.Controls.Add($LOCALAdmin)
+
+$ALLLOCALAdmin = New-Object system.Windows.Forms.Button
+$ALLLOCALAdmin.Text = "ALL Local Admin"  
+$ALLLOCALAdmin.ForeColor = "white"   
+$ALLLOCALAdmin.BackColor = "black"
+$ALLLOCALAdmin.width = 120
+$ALLLOCALAdmin.height = 24
+$ALLLOCALAdmin.location = New-Object System.Drawing.Point(450, 430) #horizontal, vertical
+$ALLLOCALAdmin.Font = 'Microsoft Sans Serif,10'
+$ALLLOCALAdmin.Add_Click( { ALLLOCALAdmin })
+$Form.Controls.Add($ALLLOCALAdmin)
 
 $PRINTCLR = New-Object system.Windows.Forms.Button
 $PRINTCLR.Text = "PRINT SPOOL CLR"  
@@ -2180,7 +2575,7 @@ $OPENLOG.ForeColor = "powderblue"
 $OPENLOG.Backcolor = "black"   
 $OPENLOG.width = 100
 $OPENLOG.height = 24     
-$OPENLOG.location = New-Object System.Drawing.Point(300, 460)
+$OPENLOG.location = New-Object System.Drawing.Point(670, 460)
 $OPENLOG.Font = 'Microsoft Sans Serif,9'
 $OPENLOG.Add_Click( { OPENLOG })
 $Form.Controls.Add($OPENLOG)
@@ -2188,18 +2583,472 @@ $Form.Controls.Add($OPENLOG)
 
 
 
+#####################################################################
+#Left Side Form Title Label
+#####################################################################
+$formLabel = New-Object System.Windows.Forms.label
+$formLabel.Location = New-Object System.Drawing.Point(280,465)
+$formLabel.Size = New-Object System.Drawing.Size(180,30)
+$formLabel.Font = New-Object System.Drawing.Font("arial","19",[System.Drawing.FontStyle]::Regular)
+$formLabel.ForeColor = "white"
+$formLabel.BackColor = "darkblue"
+$formLabel.Text = "Remote Tools"
+$form.Controls.Add($formLabel)
+#####################################################################
+
+
+
+
 ##Version Number Form Space
 $VER = New-Object system.Windows.Forms.Button
-$VER.Text = "v6.00"  
+$VER.Text = "v6.11"  
 $VER.ForeColor = "black"
 $VER.Backcolor = "whitesmoke"   
 $VER.width = 65
 $VER.height = 24
-                                            #Horizontal, Vertical
-$VER.location = New-Object System.Drawing.Point(550, 460)
+#Horizontal, Vertical
+$VER.location = New-Object System.Drawing.Point(590, 460)
 $VER.Font = 'Microsoft Sans Serif,9'
 $VER.Add_Click( { VER })
 $Form.Controls.Add($VER)
+
+
+
+
+#######################################################################################################################################################################################################
+#                                             Right Side Application                                                                                                                                  #
+#######################################################################################################################################################################################################
+
+#####################################################################
+#Right Side Form Title Label
+#####################################################################
+$formLabel = New-Object System.Windows.Forms.label
+$formLabel.Location = New-Object System.Drawing.Point(950,50)
+$formLabel.Size = New-Object System.Drawing.Size(255,30)
+$formLabel.Font = New-Object System.Drawing.Font("arial","19",[System.Drawing.FontStyle]::Regular)
+$formLabel.ForeColor = "white"
+$formLabel.BackColor = "darkblue"
+$formLabel.Text = "Local Machine Fixes"
+$form.Controls.Add($formLabel)
+
+#Right Side Bottom Form Label 
+$formLabel = New-Object System.Windows.Forms.label
+$formLabel.Location = New-Object System.Drawing.Point(950,390)
+$formLabel.Size = New-Object System.Drawing.Size(300,30)
+$formLabel.Font = New-Object System.Drawing.Font("arial","19",[System.Drawing.FontStyle]::Regular)
+$formLabel.ForeColor = "white"
+$formLabel.BackColor = "darkblue"
+$formLabel.Text = "Blank Label"
+#$form.Controls.Add($formLabel)
+#####################################################################
+
+
+
+# Create a "DISM Repair" button
+$DISM = New-Object System.Windows.Forms.Button
+$DISM.Location = New-Object System.Drawing.Point(940, 110)
+$DISM.Forecolor = "black"
+$DISM.Backcolor = "lightblue"
+$DISM.Size = New-Object System.Drawing.Size(150, 30)
+$DISM.Text = "1. DISM Repair"
+$form.Controls.Add($DISM)
+
+
+
+# Create a "Run SFC" button
+$sfcButton = New-Object System.Windows.Forms.Button
+$sfcButton.Location = New-Object System.Drawing.Point(1110, 110)
+$sfcButton.Forecolor = "black"
+$sfcButton.Backcolor = "lightblue"
+$sfcButton.Size = New-Object System.Drawing.Size(100, 30)
+$sfcButton.Text = "2. Run SFC"
+$form.Controls.Add($sfcButton)
+
+# Create an "Hiberboot - Reboot after shutdown fix" button
+$hiberbootDisable = New-Object System.Windows.Forms.Button
+$hiberbootDisable.Location = New-Object System.Drawing.Point(940, 150)
+$hiberbootDisable.Forecolor = "black"
+$hiberbootDisable.Backcolor = "lightgreen"
+$hiberbootDisable.Size = New-Object System.Drawing.Size(150, 30)
+$hiberbootDisable.Text = "Hiberboot Disable"
+$form.Controls.Add($hiberbootDisable)
+
+
+# Hiberboot Enable "Reboot after shutdown fix" button
+$hiberbootEnable = New-Object System.Windows.Forms.Button
+$hiberbootEnable.Location = New-Object System.Drawing.Point(1110, 150)
+$hiberbootEnable.Size = New-Object System.Drawing.Size(100, 30)
+$hiberbootEnable.Forecolor = "white"
+$hiberbootEnable.Backcolor = "firebrick"
+$hiberbootEnable.Text = "Hiberboot Enable"
+$form.Controls.Add($hiberbootEnable)
+
+
+# Create "Disable Auto Start Teams" button
+$disableWSUS = New-Object System.Windows.Forms.Button
+$disableWSUS.Location = New-Object System.Drawing.Point(940, 190)
+$disableWSUS.Size = New-Object System.Drawing.Size(150, 30)
+$disableWSUS.Forecolor = "black"
+$disableWSUS.Backcolor = "lightgreen"
+$disableWSUS.Text = "Disable WSUS"
+$form.Controls.Add($disableWSUS)
+
+
+# Create "Disable Auto Start Teams" button
+$enableWSUS = New-Object System.Windows.Forms.Button
+$enableWSUS.Location = New-Object System.Drawing.Point(1110, 190)
+$enableWSUS.Size = New-Object System.Drawing.Size(100, 30)
+$enableWSUS.Forecolor = "white"
+$enableWSUS.Backcolor = "firebrick"
+$enableWSUS.Text = "Enable WSUS"
+$form.Controls.Add($enableWSUS)
+
+# Create "Disable Search highlights" button
+$disableHighlights = New-Object System.Windows.Forms.Button
+$disableHighlights.Location = New-Object System.Drawing.Point(940, 230)
+$disableHighlights.Size = New-Object System.Drawing.Size(150, 30)
+$disableHighlights.Forecolor = "black"
+$disableHighlights.Backcolor = "lightgreen"
+$disableHighlights.Text = "Disable Search Highlights"
+$form.Controls.Add($disableHighlights)
+
+
+# Create "Enable Search Highlights" button
+$enableHighlights = New-Object System.Windows.Forms.Button
+$enableHighlights.Location = New-Object System.Drawing.Point(1110, 230)
+$enableHighlights.Size = New-Object System.Drawing.Size(100, 30)
+$enableHighlights.Forecolor = "white"
+$enableHighlights.Backcolor = "firebrick"
+$enableHighlights.Text = "Enable Highlights"
+$form.Controls.Add($enableHighlights)
+
+# Create "Allow upgrades with unsupported CPU TPM" button
+$AllowUpgrades = New-Object System.Windows.Forms.Button
+$AllowUpgrades.Location = New-Object System.Drawing.Point(940, 270)
+$AllowUpgrades.Size = New-Object System.Drawing.Size(150, 30)
+$AllowUpgrades.Forecolor = "black"
+$AllowUpgrades.Backcolor = "lightgreen"
+$AllowUpgrades.Font = New-Object System.Drawing.Font("","7",[System.Drawing.FontStyle]::Regular)
+$AllowUpgrades.Text = "AllowUpgrades W/o CPU/TPM"
+$form.Controls.Add($AllowUpgrades)
+
+
+# Create "DisallowUpgrades" button
+$DisallowUpgrades = New-Object System.Windows.Forms.Button
+$DisallowUpgrades.Location = New-Object System.Drawing.Point(1110, 270)
+$DisallowUpgrades.Size = New-Object System.Drawing.Size(100, 30)
+$DisallowUpgrades.Forecolor = "white"
+$DisallowUpgrades.Backcolor = "firebrick"
+$DisallowUpgrades.Font = New-Object System.Drawing.Font("","7",[System.Drawing.FontStyle]::Regular)
+$DisallowUpgrades.Text = "DisallowUpgrades"
+$form.Controls.Add($DisallowUpgrades)
+
+# Create "DisableBing" button
+$DisableBing = New-Object System.Windows.Forms.Button
+$DisableBing.Location = New-Object System.Drawing.Point(940, 310)
+$DisableBing.Size = New-Object System.Drawing.Size(150, 30)
+$DisableBing.Forecolor = "black"
+$DisableBing.Backcolor = "lightgreen"
+$DisableBing.Text = "Disable Bing"
+$form.Controls.Add($DisableBing)
+
+
+# Create "EnableBing" button
+$EnableBing = New-Object System.Windows.Forms.Button
+$EnableBing.Location = New-Object System.Drawing.Point(1110, 310)
+$EnableBing.Size = New-Object System.Drawing.Size(100, 30)
+$EnableBing.Forecolor = "white"
+$EnableBing.Backcolor = "firebrick"
+$EnableBing.Text = "Enable Bing"
+$form.Controls.Add($EnableBing)
+
+# Create "Local PCINFO" button
+$LPCINFO = New-Object System.Windows.Forms.Button
+$LPCINFO.Location = New-Object System.Drawing.Point(1110, 350)
+$LPCINFO.Size = New-Object System.Drawing.Size(100, 30)
+$LPCINFO.Forecolor = "lightgreen"
+$LPCINFO.Backcolor = "black"
+$LPCINFO.Text = "Local PC Info"
+$form.Controls.Add($LPCINFO)
+
+
+# Create "WIFI Accounts" button
+$WIFIACCOUNT = New-Object System.Windows.Forms.Button
+$WIFIACCOUNT.Location = New-Object System.Drawing.Point(1110, 390)
+$WIFIACCOUNT.Size = New-Object System.Drawing.Size(100, 30)
+$WIFIACCOUNT.Forecolor = "lightgreen"
+$WIFIACCOUNT.Backcolor = "black"
+$WIFIACCOUNT.Text = "WIFI Account(s)"
+$form.Controls.Add($WIFIACCOUNT)
+
+# Create "HDD Speed" button
+$HDDSPEED = New-Object System.Windows.Forms.Button
+$HDDSPEED.Location = New-Object System.Drawing.Point(940, 350)
+$HDDSPEED.Size = New-Object System.Drawing.Size(150, 30)
+$HDDSPEED.Forecolor = "lightgreen"
+$HDDSPEED.Backcolor = "black"
+$HDDSPEED.Text = "HDD Speed Test"
+$form.Controls.Add($HDDSPEED)
+
+# Create "WindowsUpdate" button
+$WindowsUpdate = New-Object System.Windows.Forms.Button
+$WindowsUpdate.Location = New-Object System.Drawing.Point(1110, 450)
+$WindowsUpdate.Size = New-Object System.Drawing.Size(150, 30)
+$WindowsUpdate.Forecolor = "white"
+$WindowsUpdate.Backcolor = "mediumblue"
+$WindowsUpdate.Text = "Open Windows Update"
+$form.Controls.Add($WindowsUpdate)
+
+
+# Create "Get Serial Number" button
+$SerialNumber = New-Object System.Windows.Forms.Button
+$SerialNumber.Location = New-Object System.Drawing.Point(940, 450)
+$SerialNumber.Size = New-Object System.Drawing.Size(150, 30)
+$SerialNumber.Forecolor = "white"
+$SerialNumber.Backcolor = "mediumblue"
+$SerialNumber.Text = "Get Serial Number"
+$form.Controls.Add($SerialNumber)
+
+
+
+
+# Define the actions for the buttons
+
+$DISM.Add_Click({
+    $outputBox.AppendText("DISM Checks your OS for Errors." + [Environment]::NewLine)
+    $outputBox.AppendText("Running Windows Image Repair..." + [Environment]::NewLine)
+    Start-Process cmd.exe -Verb RunAs -ArgumentList "/k DISM /Online /Cleanup-Image /RestoreHealth"
+
+})
+
+
+
+$sfcButton.Add_Click({
+
+    $outputBox.AppendText("Running SFC /Scannow..." + [Environment]::NewLine)
+    Start-Process cmd.exe -Verb RunAs -ArgumentList "/k sfc /scannow"
+ 
+})
+
+
+$hiberbootDisable.Add_Click({
+    $outputBox.AppendText("Updating registry key..." + [Environment]::NewLine)
+    Set-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Power" -Name "HiberbootEnabled" -Value 0 -Type DWord | Out-Null
+    $outputBox.AppendText("HiberbootEnabled Registry key updated to 0." + [Environment]::NewLine)
+    $outputBox.AppendText("This solves some problems with computers not wanting to wake up after updating to Windows 11." + [Environment]::NewLine)
+})
+
+
+$hiberbootEnable.Add_Click({
+    $outputBox.AppendText("Updating registry key..." + [Environment]::NewLine)
+    Set-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Power" -Name "HiberbootEnabled" -Value 1 -Type DWord | Out-Null
+    $outputBox.AppendText("HiberbootEnabled Registry key updated to 1." + [Environment]::NewLine)
+})
+
+
+$disableWSUS.Add_Click({
+    $outputBox.AppendText("Updating registry key..." + [Environment]::NewLine)
+    Set-ItemProperty -Path "HKLM:SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate\AU" -Name "UseWUServer" -Value 0 -Type DWord | Out-Null
+    Set-ItemProperty -Path "HKLM:SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate\AU" -Name "NoAutoUpdate" -Value 1 -Type DWord | Out-Null
+    $outputBox.AppendText("UseWUServer Registry key updated to 0." + [Environment]::NewLine)
+    $outputBox.AppendText("NoAutoUpdate Registry key updated to 1." + [Environment]::NewLine)
+    $outputBox.AppendText("You may run windows updates until the next GPO Update. (15 Minutes.)" + [Environment]::NewLine)
+})
+
+
+
+$enableWSUS.Add_Click({
+    $outputBox.AppendText("Updating registry key..." + [Environment]::NewLine)
+    Set-ItemProperty -Path "HKLM:SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate\AU" -Name "UseWUServer" -Value 1 -Type DWord | Out-Null
+    Set-ItemProperty -Path "HKLM:SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate\AU" -Name "NoAutoUpdate" -Value 0 -Type DWord | Out-Null
+    $outputBox.AppendText("UseWUServer Registry key updated to 1." + [Environment]::NewLine)
+    $outputBox.AppendText("NoAutoUpdate Registry key updated to 0." + [Environment]::NewLine)
+    $outputBox.AppendText("Enabled WSUS Updates Only." + [Environment]::NewLine)
+})
+
+
+
+$disableHighlights.Add_Click({
+    $outputBox.AppendText("Updating registry key..." + [Environment]::NewLine)
+    Set-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\Windows Search" -Name "EnableDynamicContentInWSB" -Value 0 -Type DWord | Out-Null
+    $outputBox.AppendText("Search Highlight EnableDynamicContentInWSB Registry key updated to 0." + [Environment]::NewLine)
+})
+
+
+$enableHighlights.Add_Click({
+    $outputBox.AppendText("Updating registry key..." + [Environment]::NewLine)
+    Set-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\Windows Search" -Name "EnableDynamicContentInWSB" -Value 1 -Type DWord | Out-Null
+    $outputBox.AppendText("Search Highlight EnableDynamicContentInWSB Registry key updated to 1." + [Environment]::NewLine)
+})
+
+$AllowUpgrades.Add_Click({
+    $outputBox.AppendText("Changing to allow Windows 11 Upgrade without checking for TPM/CPU..." + [Environment]::NewLine)
+    $outputBox.AppendText("Updating registry key..." + [Environment]::NewLine)
+    #Set-ItemProperty -Path "HKLM:\SYSTEM\Setup\MoSetup" -Name "AllowUpgradesWithUnsupportedTPMOrCPU" -Value 1 -Type DWord | Out-Null
+    $outputBox.AppendText("AllowUpgradesWithUnsupportedTPMOrCPU Registry key updated to 1." + [Environment]::NewLine)
+})
+
+
+$DisallowUpgrades.Add_Click({
+    $outputBox.AppendText("Updating registry key..." + [Environment]::NewLine)
+    Set-ItemProperty -Path "HKLM:\SYSTEM\Setup\MoSetup" -Name "AllowUpgradesWithUnsupportedTPMOrCPU" -Value 0 -Type DWord | Out-Null
+    $outputBox.AppendText("AllowUpgradesWithUnsupportedTPMOrCPU Registry key updated to 0." + [Environment]::NewLine)
+})
+
+
+$DisableBing.Add_Click({
+    $outputBox.AppendText("Updating registry key..." + [Environment]::NewLine)
+    Set-ItemProperty -Path "HKCU:\Software\Policies\Microsoft\Windows" -Name "DisableSearchBoxSuggestions" -Value 1 -Type DWord | Out-Null
+    $outputBox.AppendText("DisableSearchBoxSuggestions Registry key updated to 1." + [Environment]::NewLine)
+    $outputBox.AppendText("Since this is in the HKCU class, it only works per user and is not global." + [Environment]::NewLine)
+})
+
+$EnableBing.Add_Click({
+    $outputBox.AppendText("Updating registry key..." + [Environment]::NewLine)
+    Set-ItemProperty -Path "HKCU:\Software\Policies\Microsoft\Windows" -Name "DisableSearchBoxSuggestions" -Value 0 -Type DWord | Out-Null
+    $outputBox.AppendText("DisableSearchBoxSuggestions Registry key updated to 0." + [Environment]::NewLine)
+    $outputBox.AppendText("Since this is in the HKCU class, it only works per user and is not global." + [Environment]::NewLine)
+})
+
+$LPCINFO.Add_Click({
+    $outputBox.AppendText("Getting local PC Information..." + [Environment]::NewLine)
+    
+
+    #INSERT SCRIPT TO PERFORM HERE
+
+    $ComputerSystem = Get-WmiObject -Class Win32_ComputerSystem 
+    $OperatingSystem = Get-WmiObject -Class Win32_OperatingSystem 
+    $Bios = Get-WmiObject -Class Win32_BIOS
+    $Battery = Get-WmiObject -Class Win32_Battery  
+    $PhysicalMemory = Get-WmiObject -Class Win32_PhysicalMemory  -ErrorAction SilentlyContinue
+    $DiskDrive = Get-WmiObject -Class Win32_DiskDrive  | Select-Object -First 1
+    $Processor = Get-WmiObject -Class Win32_Processor 
+    $HardDriveType = $DiskDrive.MediaType
+    $MacAddress = Get-NetAdapter -Physical | Where-Object {$_.InterfaceDescription -match 'Ethernet'} | Select-Object -ExpandProperty MacAddress
+    $IPAddresses = (Get-WmiObject -Class Win32_NetworkAdapterConfiguration -Filter "IPEnabled='True'").IPAddress
+
+
+
+
+    # Retrieve RAM information
+    $MemoryPartNumber = $PhysicalMemory.PartNumber
+    $MemoryCapacityGB = [Math]::Round(($PhysicalMemory.Capacity / 1GB), 2)
+
+    # Retrieve hard drive information
+    $HardDriveBrand = $DiskDrive.Manufacturer
+
+    # Retrieve domain and OU information
+    $adComputer = Get-WmiObject Win32_ComputerSystem
+    $domain = $adComputer.Domain
+    $computerName = $env:COMPUTERNAME
+    $computerDN = ([adsisearcher]"(name=$computerName)").FindOne().Properties.distinguishedname
+    $ou = ($computerDN -split ',', 2)[1]
+             
+          
+
+    # Display computer information in same output box
+    $Message = @"
+Computer Name: $($ComputerSystem.Name)
+Domain: $($domain)
+OU: $($ou)
+RAM: $($MemoryPartNumber), $($MemoryCapacityGB) GB 
+Hard Drive: $($HardDriveBrand) $($HardDriveType), $([Math]::Round($DiskDrive.Size / 1GB, 2)) GB
+Processor: $($Processor.Name)
+IP Address: $($IPAddresses -join ', ')
+MAC Address: $($MacAddress)
+Serial Number: $($Bios.SerialNumber)
+Battery Status: $($Battery.EstimatedChargeRemaining)%
+------------------------------------------------------
+Serial Number Automatically copies to your clipboard.
+
+"@
+
+    [System.Windows.Forms.Clipboard]::SetText($Bios.SerialNumber)
+
+    logAction $Message
+         
+    $outputBox.AppendText("$Message" + [Environment]::NewLine)
+
+
+})
+
+$HDDSPEED.Add_Click({
+    # Redirect the output of the script to a variable
+    $output = & {
+        $outputBox.AppendText("Running HDD Speed Test..." + [Environment]::NewLine)
+
+        # Run winsat command and save results to variable
+        $testResults = & winsat disk -drive c -ran -write -count 10
+
+        # Display test results in console
+        $testResults | Out-String -Stream | ForEach-Object { $outputBox.AppendText($_ + [Environment]::NewLine) }
+        logAction $testResults 
+    }
+
+    # Display the output in your output box
+    $output | Out-String -Stream | ForEach-Object { $outputBox.AppendText($_ + [Environment]::NewLine) }
+})
+
+
+
+$WIFIACCOUNT.Add_Click({
+    $outputBox.AppendText("Starting WIFI Account Tool..." + [Environment]::NewLine)
+    logAction "Starting WIFI Account Tool..."
+
+    $profiles = netsh wlan show profile
+    foreach ($line in $profiles) {
+      if ($line -match "Profile\s*:\s*(.*)") {
+        $ssid = $Matches[1].Trim().Replace(" ", "")
+        $output = netsh wlan show profile name="$ssid" key=clear
+        $keyContentLine = $output | Select-String "Key Content"
+        if ($keyContentLine -match "Key Content\s*:\s*(.*)") {
+          $password = $Matches[1].Trim()
+          $outputBox.AppendText("SSID: $ssid, Password: $password" + [Environment]::NewLine)
+          logAction "SSID: $ssid, Password: $password"
+        }
+        else {
+          $outputBox.AppendText("SSID: $ssid, Password: Not found" + [Environment]::NewLine)
+          logAction "SSID: $ssid, Password: Not found"
+        }
+      }
+    }
+})
+
+
+
+
+
+$WindowsUpdate.Add_Click({
+    $outputBox.AppendText("Opening Windows Update Panel..." + [Environment]::NewLine)
+    start ms-settings:windowsupdate
+
+})
+
+$SerialNumber.Add_Click({
+    $outputBox.AppendText("Getting Serial Number of PC..." + [Environment]::NewLine)
+    $serialNumber = Get-WmiObject -Class Win32_BIOS | Select-Object -ExpandProperty SerialNumber
+    $serialnumber
+    $outputBox.AppendText("Serial Number: $serialNumber" + [Environment]::NewLine)
+    $outputBox.AppendText("--------------------------------------------------------------------------" + [Environment]::NewLine)
+    $outputBox.AppendText("The Serial number is automacially copied to clipboard." + [Environment]::NewLine)
+    [System.Windows.Forms.Clipboard]::SetText($serialnumber)
+})
+
+
+####################################################################################
+#END OF RIGHT SIDE APPLICATION
+####################################################################################
+
+
+
+
+
+
+
+
+
+
+
 #################################################################################################
 
 
@@ -2210,10 +3059,9 @@ $Form.Controls.Add($VER)
 
 # Verifies the application is being run with ADMIN- Account
 #If ($env:UserName -like "ADMIN ACCOUNT PREFIX*") {
-    [void]$Form.ShowDialog()
+[void]$Form.ShowDialog()
 #}
 #Else {
 #   $wshell.Popup("Please launch using ADMIN-Account.", 0, "Security Error")
 #    $formMain.Close()
 #}
-
