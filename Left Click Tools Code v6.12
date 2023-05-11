@@ -8,6 +8,9 @@
 
 
 
+
+
+
 #######################################################
 #           List of features to add
 ####################################################### 
@@ -630,7 +633,7 @@ function RemoteU {
 
 
                         
-  ii -path \\YOURNETWORKSHARE\
+  ii -path \\YOURNETWORKSHARE.net\
                        
                        
                           
@@ -1973,10 +1976,9 @@ function LOCALAdmin {
             $adminlist = @($admins.psbase.Invoke("Members"))
             $adminnames = @()
 
-# Check if admin name does not contain "Cheese" or "fruit"
             foreach ($admin in $adminlist) {
               $adminname = $admin.GetType().InvokeMember("Name", 'GetProperty', $null, $admin, $null)
-              if ($adminname -notlike "*CHEESE*" -and $adminname -notlike "*CHEESE*" -and $adminname -notlike "*CHEESE*" -and $adminname -notlike "*CHEESE*" -and $adminname -notlike "*Domain Admins*" -and $adminname -notlike "*CHEESE*") { 
+              if ($adminname -notlike "*Cheese*" -and $adminname -notlike "*Cheese*" -and $adminname -notlike "*Cheese*" -and $adminname -notlike "*Domain Admins*" -and $adminname -notlike "*Domain Admins*" -and $adminname -notlike "*Cheese*") { # Check if admin name does not contain "Cheese" or "fruit"
                 $adminnames += $adminname
               }
             }
@@ -3461,6 +3463,38 @@ $SerialNumber.Add_Click({
 ####################################################################################
 #END OF RIGHT SIDE APPLICATION
 ####################################################################################
+
+
+
+
+# Check if the current user is an administrator
+$currentUser = [Security.Principal.WindowsIdentity]::GetCurrent()
+$currentUserPrincipal = New-Object Security.Principal.WindowsPrincipal($currentUser)
+$isAdministrator = $currentUserPrincipal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+
+# Debug output
+Write-Host "Current user is an administrator: $isAdministrator"
+
+# If not an administrator, relaunch the script as an administrator
+if (!$isAdministrator) {
+  # Build the command to launch the script with elevated privileges
+  $scriptPath = $MyInvocation.MyCommand.Path
+  $arguments = "-File `"$scriptPath`""
+
+  # Launch the new process with elevated privileges
+  $process = New-Object System.Diagnostics.ProcessStartInfo
+  $process.FileName = 'powershell.exe'
+  $process.Arguments = $arguments
+  $process.Verb = 'runas'
+
+  # Debug output
+  Write-Host "Relaunching application as an administrator..."
+
+  # Start the process and wait for it to exit
+  [System.Diagnostics.Process]::Start($process) | Out-Null
+  exit
+}
+
 
 
 
