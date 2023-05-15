@@ -3468,6 +3468,8 @@ $SerialNumber.Add_Click({
 
 
 # Check if the current user is an administrator
+
+
 $currentUser = [Security.Principal.WindowsIdentity]::GetCurrent()
 $currentUserPrincipal = New-Object Security.Principal.WindowsPrincipal($currentUser)
 $isAdministrator = $currentUserPrincipal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
@@ -3488,6 +3490,7 @@ if (!$isAdministrator) {
   $process.Verb = 'runas'
 
   # Debug output
+  $msgBoxInput = $wshell.Popup("Since most of these actions require admin privilages, you must be an admin on the machine you are running this on, or launch from an administrative powershell session.  The program will attempt to elevate privilages now.", 0, "Confirm", 0x1)
   Write-Host "Relaunching application as an administrator..."
 
   # Start the process and wait for it to exit
