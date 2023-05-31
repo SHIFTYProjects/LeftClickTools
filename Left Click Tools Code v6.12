@@ -822,8 +822,8 @@ function SHUTDN {
 
       # Loop to perform action on each item in the list.    
       foreach ($item in $itemList.items) {
-        $statusText.text = "Restarting $item"
-        $outputBox.AppendText("Restarting $item" + [Environment]::NewLine)
+        $statusText.text = "Shutting Down  $item"
+        $outputBox.AppendText("Shutting Down $item" + [Environment]::NewLine)
         try {
           If (test-connection -count 1 -ComputerName $item -quiet) {
             logAction "$item ONLINE"
